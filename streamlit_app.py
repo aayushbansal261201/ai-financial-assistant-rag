@@ -10,41 +10,41 @@ from utils.text_splitter import split_documents
 from utils.embeddings import get_embedding_model
 from utils.retriever import create_vector_store
 
-# Load environment variables
+
 load_dotenv()
 
-# Get API key
+
 api_key = os.getenv("GROQ_API_KEY")
 
-# Initialize Groq client
+
 client = Groq(api_key=api_key)
 
-# Streamlit page config
+
 st.set_page_config(
     page_title="AI Financial Assistant",
     page_icon="🤖",
     layout="wide"
 )
 
-# App title
+
 st.title("🤖 AI Financial Assistant")
 
 st.write("Upload a PDF and ask questions from it.")
 
-# Session state for chat history
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Upload PDF
+
 uploaded_file = st.file_uploader(
     "Upload PDF",
     type="pdf"
 )
 
-# Process uploaded PDF
+
 if uploaded_file is not None:
 
-    # Save uploaded file temporarily
+    
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix=".pdf"
@@ -56,16 +56,16 @@ if uploaded_file is not None:
 
     st.success("PDF uploaded successfully!")
 
-    # Load PDF
+    
     documents = load_pdf(temp_pdf_path)
 
-    # Split documents into chunks
+    
     chunks = split_documents(documents)
 
-    # Load embedding model
+    
     embedding_model = get_embedding_model()
 
-    # Create vector store
+    
     vector_store = create_vector_store(
         chunks,
         embedding_model
@@ -73,22 +73,22 @@ if uploaded_file is not None:
 
     st.success("Vector database created successfully!")
 
-    # Display previous messages
+    
     for message in st.session_state.messages:
 
         with st.chat_message(message["role"]):
 
             st.markdown(message["content"])
 
-    # Chat input
+    
     user_question = st.chat_input(
         "Ask a question from the PDF"
     )
 
-    # If user enters question
+    
     if user_question:
 
-        # Store user message
+        
         st.session_state.messages.append(
             {
                 "role": "user",
@@ -96,23 +96,23 @@ if uploaded_file is not None:
             }
         )
 
-        # Display user message
+        
         with st.chat_message("user"):
 
             st.markdown(user_question)
 
-        # Retrieve relevant chunks
+        
         retrieved_docs = vector_store.similarity_search(
             user_question,
             k=3
         )
 
-        # Combine retrieved context
+        
         context = "\n\n".join(
             [doc.page_content for doc in retrieved_docs]
         )
 
-        # Source references
+        
         sources = []
 
         for doc in retrieved_docs:
@@ -128,7 +128,7 @@ if uploaded_file is not None:
                     f"Page {page_number + 1}"
                 )
 
-        # Build conversation history
+        
         conversation_history = ""
 
         for message in st.session_state.messages[-6:]:
@@ -141,7 +141,7 @@ if uploaded_file is not None:
                 f"{role}: {content}\n"
             )
 
-        # Prompt
+        
         prompt = f"""
         You are an AI Financial Assistant.
 
@@ -160,7 +160,7 @@ if uploaded_file is not None:
         {user_question}
         """
 
-        # Generate AI response
+        
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -171,10 +171,10 @@ if uploaded_file is not None:
             ]
         )
 
-        # Extract answer
+        
         answer = response.choices[0].message.content
 
-        # Store assistant response
+        
         st.session_state.messages.append(
             {
                 "role": "assistant",
@@ -182,7 +182,7 @@ if uploaded_file is not None:
             }
         )
 
-        # Display assistant response
+        
         with st.chat_message("assistant"):
 
             st.markdown(answer)
